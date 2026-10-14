@@ -1,2 +1,6 @@
-dist/
 node_modules/
+coverage/
+test/fixtures/parent/starter/
+test/fixtures/parent/snippets/
+test/fixtures/parent/docs.json
+test/fixtures/parent/.mintlify-multirepo.json

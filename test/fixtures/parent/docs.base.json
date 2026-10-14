@@ -1,0 +1,9 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Aggregator fixture",
+  "colors": { "primary": "#16A34A" },
+  "navigation": {
+    "tabs": [{ "tab": "Starter", "pages": [{ "sourceRef": "mintlify/starter" }] }]
+  }
+}

@@ -1,0 +1,32 @@
+name: Aggregate docs
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 * * * *"
+  repository_dispatch:
+    types: [docs-updated]
+
+concurrency:
+  group: mintlify-multirepo
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v3
+        id: app
+        with:
+          app-id: ${{ vars.DOCS_APP_ID }}
+          private-key: ${{ secrets.DOCS_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      - uses: actions/checkout@v7
+      - uses: mintlify/multirepo-action@v1
+        with:
+          token: ${{ steps.app.outputs.token }}
+          mode: pull-request

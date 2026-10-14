@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { parseConfig } from '../src/config.js'
-import { sync } from '../src/sync.js'
+import { explainFetchError, sync } from '../src/sync.js'
 
 const tmp = mkdtempSync(join(tmpdir(), 'aggregator-test-'))
 const server = join(tmp, 'server')
@@ -98,7 +98,7 @@ describe('sync', () => {
   it('fails without touching the tree when a source is missing', async () => {
     const before = readFileSync(join(root, 'docs.json'), 'utf8')
     const missing = parseConfig({ sources: [{ repo: 'acme/nope', destination: 'nope' }] })
-    await expect(sync({ config: missing, root, auth, concurrency: 1 })).rejects.toThrow(/git fetch failed/)
+    await expect(sync({ config: missing, root, auth, concurrency: 1 })).rejects.toThrow(/^acme\/nope: git fetch failed/)
     expect(readFileSync(join(root, 'docs.json'), 'utf8')).toBe(before)
   })
 
@@ -113,5 +113,16 @@ describe('sync', () => {
     const manifest = await sync({ config: shaConfig, root, auth, concurrency: 1 })
     expect(manifest.sources.sdks!.sha).toBe(pinned)
     expect(readFileSync(join(root, 'sdks/js.mdx'), 'utf8')).toBe('# JS')
+  })
+
+  it('names the repository and the missing ref', async () => {
+    const badRef = parseConfig({ sources: [{ repo: 'acme/api', ref: 'nope', path: 'docs', destination: 'api' }] })
+    await expect(sync({ config: badRef, root, auth, concurrency: 1 })).rejects.toThrow(/^acme\/api: git fetch failed.*Check that ref "nope" exists in acme\/api/s)
+  })
+
+  it('explains auth failures', () => {
+    const [source] = parseConfig({ sources: [{ repo: 'acme/private', destination: 'p' }] }).sources
+    const runnerMessage = "git fetch failed: fatal: could not read Username for 'https://github.com': terminal prompts disabled"
+    expect(explainFetchError(source!, runnerMessage)).toMatch(/^acme\/private: git fetch failed.*Check that the `token` input can read acme\/private/)
   })
 })

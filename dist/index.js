@@ -32105,9 +32105,22 @@ async function exists2(path) {
     () => false
   );
 }
+var AUTH_ERROR = /could not read Username|Authentication failed|Repository not found|returned error: 40[134]/i;
+var REF_ERROR = /couldn't find remote ref|not our ref/i;
+function explainFetchError(source, message) {
+  let hint = "";
+  if (AUTH_ERROR.test(message)) {
+    hint = ` Check that the \`token\` input can read ${source.repo}. The default github.token can only read the repository running the workflow, so private child repositories need a GitHub App token or a PAT.`;
+  } else if (REF_ERROR.test(message)) {
+    hint = ` Check that ref "${source.ref}" exists in ${source.repo}. Commit SHAs must be the full 40 characters.`;
+  }
+  return `${source.repo}: ${message}${hint}`;
+}
 async function fetchSource(source, work, opts) {
   const dir = join(work, source.destination.replace(/\//g, "__"));
-  const sha = await clone(source.repo, source.ref, source.path, dir, opts.auth);
+  const sha = await clone(source.repo, source.ref, source.path, dir, opts.auth).catch((e) => {
+    throw new Error(explainFetchError(source, e.message));
+  });
   const docsDir = inside(dir, source.path);
   const docsFile = join(docsDir, "docs.json");
   if (!await exists2(docsFile)) throw new Error(`${source.repo}: no docs.json in ${source.path}`);

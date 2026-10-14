@@ -1,26 +1,48 @@
 name: Mintlify Multirepo Action
-description: Combine multiple Mintlify docs repositories
+description: Combine Mintlify docs from many repositories into one docs repository, merging navigation into a single docs.json
+author: Mintlify
+branding:
+  icon: layers
+  color: green
+
 inputs:
-  repos:
-    description: >
-      A stringified yaml array containing objects representing the
-      mintlify docs repositories to be aggregated.
-    required: true
+  config:
+    description: Path to the config file, relative to working-directory
+    default: .github/mintlify-multirepo.yml
   token:
-    description: Personal access token (PAT) used to push the aggregated docs
-    required: true
-  target-branch:
-    description: The branch to which the complete documentation will be pushed
-    required: false
-    default: main
-  subdirectory:
-    description: Path to the directory containing the main docs.json
-    required: false
-    default: '.'
-  force:
-    description: If `true`, will force-push to `target-branch`
-    required: false
-    default: false
+    description: Token used to clone child repositories. Use a PAT or GitHub App token for private repositories outside this one
+    default: ${{ github.token }}
+  github-token:
+    description: Token used to open pull requests in this repository. Defaults to token
+    default: ${{ github.token }}
+  mode:
+    description: "What to do with changes: pull-request, push, or none"
+    default: pull-request
+  branch:
+    description: Branch used for the sync pull request
+    default: mintlify-multirepo/sync
+  base-branch:
+    description: Branch to push to or target with the pull request. Defaults to the branch the workflow runs on
+  commit-message:
+    description: Commit message and pull request title
+    default: "docs: sync from child repositories"
+  concurrency:
+    description: Number of child repositories fetched in parallel
+    default: "8"
+  working-directory:
+    description: Root of the docs repository
+    default: .
+
+outputs:
+  changed:
+    description: Whether the sync produced changes
+  commit-sha:
+    description: SHA of the sync commit
+  pull-request-number:
+    description: Number of the sync pull request
+  pull-request-url:
+    description: URL of the sync pull request
+
 runs:
-  using: node20
+  using: node24
   main: dist/index.js

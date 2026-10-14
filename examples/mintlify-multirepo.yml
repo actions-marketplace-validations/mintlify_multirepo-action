@@ -1,0 +1,16 @@
+base: docs.base.json
+output: docs.json
+sources:
+  - repo: acme/api
+    path: docs
+    destination: api
+    name: API reference
+  - repo: acme/sdk-js
+    ref: main
+    path: docs
+    destination: sdks/js
+    name: JavaScript SDK
+    exclude: [README.md, "drafts/**"]
+  - repo: acme/platform/legacy
+    destination: legacy
+    rewriteLinks: false

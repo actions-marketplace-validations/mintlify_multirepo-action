@@ -1,0 +1,4 @@
+sources:
+  - repo: mintlify/starter
+    destination: starter
+    exclude: [README.md, AGENTS.md, LICENSE]

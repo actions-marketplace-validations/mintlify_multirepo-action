@@ -1,0 +1,14 @@
+name: Notify docs repository
+
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**"]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.DOCS_DISPATCH_TOKEN }}
+        run: gh api repos/acme/docs/dispatches -f event_type=docs-updated -f "client_payload[repo]=${{ github.repository }}"

@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm type
+      - run: pnpm test
+      - run: pnpm build
+      - name: Check dist is up to date
+        run: git diff --exit-code dist || (echo "::error::dist is stale, run pnpm build and commit" && exit 1)
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # The fixture's outputs are gitignored here, so run it as its own repo
+      - name: Copy fixture into a fresh repo
+        run: cp -r test/fixtures/parent "$RUNNER_TEMP/parent" && git -C "$RUNNER_TEMP/parent" init -q
+      - id: sync
+        uses: ./
+        with:
+          working-directory: ${{ runner.temp }}/parent
+          mode: none
+      - name: Verify output
+        working-directory: ${{ runner.temp }}/parent
+        run: |
+          test "${{ steps.sync.outputs.changed }}" = "true"
+          test -f starter/quickstart.mdx
+          test ! -f starter/README.md
+          jq -e '.navigation.tabs[0].pages[0].pages | index("starter/quickstart")' docs.json
